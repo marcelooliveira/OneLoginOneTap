@@ -8,6 +8,10 @@ from onelogin.saml2.auth import OneLogin_Saml2_Auth
 from onelogin.saml2.settings import OneLogin_Saml2_Settings
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
 
+from onelogin.api.client import OneLoginClient
+import json
+import jwt
+import secrets
 
 def init_saml_auth(req):
     auth = OneLogin_Saml2_Auth(req, custom_base_path=settings.SAML_FOLDER)
@@ -109,7 +113,7 @@ def index(request):
             attributes = request.session['samlUserdata'].items()
 
     return render(request, 'index.html', {'errors': errors, 'error_reason': error_reason, 'not_auth_warn': not_auth_warn, 'success_slo': success_slo,
-                                          'attributes': attributes, 'paint_logout': paint_logout})
+                                          'attributes': attributes, 'paint_logout': paint_logout, 'one_tap_client_id': secrets.ONE_TAP_CLIENT_ID})
 
 
 def attrs(request):
@@ -138,3 +142,56 @@ def metadata(request):
     else:
         resp = HttpResponseServerError(content=', '.join(errors))
     return resp
+
+def one_tap_login(request):
+    if request.method=='POST':
+            received_json_data=json.loads(request.body)
+            credential = received_json_data['credential']
+            decoded = jwt.decode(credential, verify=False)  
+            user_name = decoded['name']
+            user_email = decoded['email']
+            user_first_name = decoded['given_name']
+            user_last_name = decoded['family_name']
+
+            client = OneLoginClient(
+                secrets.ONELOGIN_CLIENT_ID, 
+                secrets.ONELOGIN_CLIENT_SECRET,
+                'us'
+            )
+
+            # 1. Make sure the user you want to create does not exist yet
+            users = client.get_users({
+                "email": user_email
+            })
+
+            # 2. Create the new user (explain the most interesting user parameters)
+            if len(users) == 0:
+                new_user_params = {
+                    "email": user_email,
+                    "firstname": user_first_name,
+                    "lastname": user_last_name,
+                    "username": user_name
+                }
+                created_user = client.create_user(new_user_params)
+
+                if created_user is not None:
+
+                    client.set_password_using_clear_text(created_user.id, user_name, user_name)
+
+                    # 3. Assign a role to the user
+                    roles = client.get_roles({
+                        "name": "Default"
+                    })
+
+                    if  len(roles) == 1:
+                        role_ids = [
+                            roles[0].id
+                        ]
+                        client.assign_role_to_user(created_user.id, role_ids)
+
+                    # 4. Set the user state
+                    USER_STATE_APPROVED = 1
+                    client.set_state_to_user(created_user.id, USER_STATE_APPROVED) # STATE: APPROVED
+
+    return HttpResponse()
+    
