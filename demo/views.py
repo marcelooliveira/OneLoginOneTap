@@ -178,20 +178,23 @@ def one_tap_login(request):
 
                     client.set_password_using_clear_text(created_user.id, user_name, user_name)
 
-                    # 3. Assign a role to the user
-                    roles = client.get_roles({
-                        "name": "Default"
-                    })
-
-                    if  len(roles) == 1:
-                        role_ids = [
-                            roles[0].id
-                        ]
-                        client.assign_role_to_user(created_user.id, role_ids)
+                    # 3. Assign the Default role to the user
+                    assign_role_to_user(client, created_user, "Default")
+                    assign_role_to_user(client, created_user, "Employee")
 
                     # 4. Set the user state
                     USER_STATE_APPROVED = 1
                     client.set_state_to_user(created_user.id, USER_STATE_APPROVED) # STATE: APPROVED
 
     return HttpResponse()
-    
+
+def assign_role_to_user(onelogin_client, onelogin_user, role_name):
+    roles = onelogin_client.get_roles({
+        "name": role_name
+    })
+
+    if  len(roles) == 1:
+        role_ids = [
+            roles[0].id
+        ]
+        onelogin_client.assign_role_to_user(onelogin_user.id, role_ids)
