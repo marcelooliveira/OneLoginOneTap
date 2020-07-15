@@ -11,7 +11,7 @@ from onelogin.saml2.utils import OneLogin_Saml2_Utils
 from onelogin.api.client import OneLoginClient
 import json
 import jwt
-import secrets
+import mysecrets
 
 def init_saml_auth(req):
     auth = OneLogin_Saml2_Auth(req, custom_base_path=settings.SAML_FOLDER)
@@ -113,7 +113,7 @@ def index(request):
             attributes = request.session['samlUserdata'].items()
 
     return render(request, 'index.html', {'errors': errors, 'error_reason': error_reason, 'not_auth_warn': not_auth_warn, 'success_slo': success_slo,
-                                          'attributes': attributes, 'paint_logout': paint_logout, 'one_tap_client_id': secrets.ONE_TAP_CLIENT_ID})
+                                          'attributes': attributes, 'paint_logout': paint_logout, 'one_tap_client_id': mysecrets.ONE_TAP_CLIENT_ID})
 
 
 def attrs(request):
@@ -154,8 +154,8 @@ def one_tap_login(request):
             user_last_name = decoded['family_name']
 
             client = OneLoginClient(
-                secrets.ONELOGIN_CLIENT_ID, 
-                secrets.ONELOGIN_CLIENT_SECRET,
+                mysecrets.ONELOGIN_CLIENT_ID, 
+                mysecrets.ONELOGIN_CLIENT_SECRET,
                 'us'
             )
 
