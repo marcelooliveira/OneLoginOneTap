@@ -23,39 +23,5 @@
       {% block content %}{% endblock %}
     </div>
   </body>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="https://code.jquery.com/jquery-3.5.1.min.js" ></script>
-  <script>
-    window.onload = function () {
-      google.accounts.id.initialize({
-        client_id: '{{one_tap_client_id}}',
-        login_url: 'http://localhost:8000/login',
-        callback: function (credentialResponse) {
-          let response = credentialResponse;
-          $.ajax({
-            type: 'POST',
-            url: '/one-tap-login',
-            headers: {
-              'X-Requested-With': 'XMLHttpRequest'
-            },
-            contentType: 'application/JSON; charset=utf-8',
-            success: function(result) {
-              if (!result) {
-                return ;
-              }
-              
-              if (result.accessToken) {
-                localStorage.setItem("accessToken", result.accessToken);
-                localStorage.setItem("refreshToken", result.refreshToken);
-              }
-              location.reload();
-            },
-            processData: false,
-            data: JSON.stringify({credential: response.credential})
-          });
-        }
-      });
-      google.accounts.id.prompt();
-    };
-  </script>
-</html>
+  {% block js %}{% endblock %}
+  </html>
