@@ -145,46 +145,46 @@ def metadata(request):
 
 def one_tap_login(request):
     if request.method=='POST':
-            received_json_data=json.loads(request.body)
-            credential = received_json_data['credential']
-            decoded = jwt.decode(credential, verify=False)  
-            user_name = decoded['name']
-            user_email = decoded['email']
-            user_first_name = decoded['given_name']
-            user_last_name = decoded['family_name']
+        received_json_data=json.loads(request.body)
+        credential = received_json_data['credential']
+        decoded = jwt.decode(credential, verify=False)  
+        user_name = decoded['name']
+        user_email = decoded['email']
+        user_first_name = decoded['given_name']
+        user_last_name = decoded['family_name']
 
-            client = OneLoginClient(
-                mysecrets.ONELOGIN_CLIENT_ID, 
-                mysecrets.ONELOGIN_CLIENT_SECRET,
-                'us'
-            )
+        client = OneLoginClient(
+            mysecrets.ONELOGIN_CLIENT_ID, 
+            mysecrets.ONELOGIN_CLIENT_SECRET,
+            'us'
+        )
 
-            # 1. Make sure the user you want to create does not exist yet
-            users = client.get_users({
-                "email": user_email
-            })
+        # 1. Make sure the user you want to create does not exist yet
+        users = client.get_users({
+            "email": user_email
+        })
 
-            # 2. Create the new user (explain the most interesting user parameters)
-            if len(users) == 0:
-                new_user_params = {
-                    "email": user_email,
-                    "firstname": user_first_name,
-                    "lastname": user_last_name,
-                    "username": user_name
-                }
-                created_user = client.create_user(new_user_params)
+        # 2. Create the new user (explain the most interesting user parameters)
+        if len(users) == 0:
+            new_user_params = {
+                "email": user_email,
+                "firstname": user_first_name,
+                "lastname": user_last_name,
+                "username": user_name
+            }
+            created_user = client.create_user(new_user_params)
 
-                if created_user is not None:
+            if created_user is not None:
 
-                    client.set_password_using_clear_text(created_user.id, user_name, user_name)
+                client.set_password_using_clear_text(created_user.id, user_name, user_name)
 
-                    # 3. Assign the Default role to the user
-                    assign_role_to_user(client, created_user, "Default")
-                    assign_role_to_user(client, created_user, "Employee")
+                # 3. Assign the Default role to the user
+                assign_role_to_user(client, created_user, "Default")
+                assign_role_to_user(client, created_user, "Employee")
 
-                    # 4. Set the user state
-                    USER_STATE_APPROVED = 1
-                    client.set_state_to_user(created_user.id, USER_STATE_APPROVED) # STATE: APPROVED
+                # 4. Set the user state
+                USER_STATE_APPROVED = 1
+                client.set_state_to_user(created_user.id, USER_STATE_APPROVED) # STATE: APPROVED
 
     return HttpResponse()
 
